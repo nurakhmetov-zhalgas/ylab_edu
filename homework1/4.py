@@ -17,11 +17,9 @@ class Solution:
             return
         elif remainder == "":
             return
-        if remainder[0] != search[0]:
-            self.helper(current + '-', remainder[1:], search)
-        else:
+        if remainder[0] == search[0]:
             self.helper(current + search[0], remainder[1:], search[1:])
-            self.helper(current + '-', remainder[1:], search)
+        self.helper(current + '-', remainder[1:], search)
 
     def solve(self) -> None:
         current = ""
