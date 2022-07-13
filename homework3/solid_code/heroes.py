@@ -23,6 +23,7 @@ class Superman(AbstractSuperhero, Laser, Karate):
 
     def attack(self):
         self.roundhouse_kick()
+        self.ultimate()
 
     def ultimate(self):
         self.incinerate_with_lasers()
@@ -42,6 +43,7 @@ class Pleakley(AbstractSuperhero, Laser, Karate, Gun):
     def attack(self):
         self.roundhouse_kick()
         self.fire_a_gun()
+        self.ultimate()
 
     def ultimate(self):
         return self.incinerate_with_lasers()
