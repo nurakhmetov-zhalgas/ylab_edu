@@ -128,8 +128,17 @@ class UserService(ServiceMixin):
         self.session.add(user)
         self.session.commit()
         self.session.refresh(user)
-        jti: str = self.get_token_jti(token)
-        self.block_access_token(jti)
+        access_jti: str = self.get_token_jti(token)
+        payload = self.decode_token(token)
+        user_uuid = payload.get("user_uuid", None)
+        refresh_jti: str = payload.get("refresh_jti", None)
+        if not refresh_jti or not user_uuid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect payload(access_token)",
+            )
+        self.block_access_token(access_jti)
+        self.active_refresh_token.lrem(user_uuid, 0, refresh_jti)
         return user
 
     @staticmethod
@@ -202,6 +211,10 @@ class UserService(ServiceMixin):
         jti: str = payload.get("jti", None)
         refresh_jti: str = payload.get("refresh_jti", None)
         user_uuid: str = payload.get("user_uuid", None)
+        if self.check_jti_in_blocked(jti):
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE, detail="Token in block list"
+            )
         if not jti or not refresh_jti or not user_uuid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect payload"
@@ -213,6 +226,10 @@ class UserService(ServiceMixin):
         payload = self.decode_token(token)
         jti: str = payload.get("jti", None)
         user_uuid: str = payload.get("user_uuid", None)
+        if self.check_jti_in_blocked(jti):
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE, detail="Token in block list"
+            )
         if not jti or not user_uuid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect payload"

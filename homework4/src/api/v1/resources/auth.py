@@ -1,7 +1,6 @@
 from fastapi import APIRouter, status, Depends
 
 from src.api.v1.schemas import UserCreate, Token, UserModel, UserLogin, UserUpdate
-from src.core.config import JWT_ACCESS_EXPIRE_SECONDS
 from src.models import User
 from src.services.user import UserService, get_user_service, get_token
 
@@ -50,13 +49,11 @@ def update_user(
     user: User = user_service.update_user(
         user, user_data.dict(exclude_unset=True), token
     )
-    access_token: str = user_service.create_token_str(
-        {"user_uuid": str(user.uuid)}, "access", JWT_ACCESS_EXPIRE_SECONDS
-    )
+    token: Token = user_service.create_token_by_user(user)
     response = {
         "msg": "Update is successful. Please use new access token.",
         "user": UserModel(**user.dict()),
-        "access_token": access_token,
+        "access_token": token.access_token,
     }
     return response
 
