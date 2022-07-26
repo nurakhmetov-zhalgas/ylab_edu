@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
 from src.api.v1.schemas import PostCreate, PostListResponse, PostModel
-from src.services import PostService, get_post_service
+from src.models import User
+from src.services import PostService, get_post_service, get_token, UserService, get_user_service
 
 router = APIRouter()
 
@@ -53,6 +54,9 @@ def post_detail(
 def post_create(
     post: PostCreate,
     post_service: PostService = Depends(get_post_service),
+    user_service: UserService = Depends(get_user_service),
+    token: str = Depends(get_token)
 ) -> PostModel:
+    user: User = user_service.get_current_user(token)
     post: dict = post_service.create_post(post=post)
     return PostModel(**post)
