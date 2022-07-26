@@ -2,6 +2,7 @@ from http import HTTPStatus
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from starlette import status
 
 from src.api.v1.schemas import PostCreate, PostListResponse, PostModel
 from src.services import PostService, get_post_service
@@ -32,7 +33,8 @@ def post_list(
     tags=["posts"],
 )
 def post_detail(
-    post_id: int, post_service: PostService = Depends(get_post_service),
+    post_id: int,
+    post_service: PostService = Depends(get_post_service),
 ) -> PostModel:
     post: Optional[dict] = post_service.get_post_detail(item_id=post_id)
     if not post:
@@ -44,11 +46,13 @@ def post_detail(
 @router.post(
     path="/",
     response_model=PostModel,
+    status_code=status.HTTP_201_CREATED,
     summary="Создать пост",
     tags=["posts"],
 )
 def post_create(
-    post: PostCreate, post_service: PostService = Depends(get_post_service),
+    post: PostCreate,
+    post_service: PostService = Depends(get_post_service),
 ) -> PostModel:
     post: dict = post_service.create_post(post=post)
     return PostModel(**post)

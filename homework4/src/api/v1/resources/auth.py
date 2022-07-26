@@ -51,7 +51,7 @@ def update_user(
         user, user_data.dict(exclude_unset=True), token
     )
     access_token: str = user_service.create_token_str(
-        str(user.uuid), "access", JWT_ACCESS_EXPIRE_SECONDS
+        {"user_uuid": str(user.uuid)}, "access", JWT_ACCESS_EXPIRE_SECONDS
     )
     response = {
         "msg": "Update is successful. Please use new access token.",
