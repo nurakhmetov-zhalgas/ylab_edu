@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
+from src.core import config
+
 __all__ = (
     "AbstractCache",
     "get_cache",
+    "get_blocked_access_cache",
+    "get_active_refresh_cache",
 )
-
-from src.core import config
 
 
 class AbstractCache(ABC):
@@ -32,8 +34,18 @@ class AbstractCache(ABC):
 
 
 cache: Optional[AbstractCache] = None
+active_refresh_cache: Optional[AbstractCache] = None
+blocked_access_cache: Optional[AbstractCache] = None
 
 
 # Функция понадобится при внедрении зависимостей
 def get_cache() -> AbstractCache:
     return cache
+
+
+def get_blocked_access_cache() -> AbstractCache:
+    return blocked_access_cache
+
+
+def get_active_refresh_cache() -> AbstractCache:
+    return active_refresh_cache
