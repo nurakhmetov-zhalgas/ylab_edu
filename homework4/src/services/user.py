@@ -206,7 +206,7 @@ class UserService(ServiceMixin):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect payload"
             )
-        self.active_refresh_token.lrem(user_uuid, 0, jti)
+        self.active_refresh_token.lrem(user_uuid, 0, refresh_jti)
         self.block_access_token(jti)
 
     def logout_all(self, token: str) -> NoReturn:
