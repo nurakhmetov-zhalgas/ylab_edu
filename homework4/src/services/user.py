@@ -155,8 +155,8 @@ class UserService(ServiceMixin):
         return jti
 
     @staticmethod
-    def create_token_str(sub: str, token_type: str, exp: int) -> str:
-        payload = {"user_uuid": sub, "type": token_type}
+    def create_token_str(sub: dict, token_type: str, exp: int) -> str:
+        payload = sub.copy()
         now = datetime.utcnow().timestamp()
         payload.update(
             {
@@ -164,6 +164,7 @@ class UserService(ServiceMixin):
                 "nbf": int(now),
                 "jti": str(uuid.uuid4()),
                 "exp": int(now + exp),
+                "type": token_type,
             }
         )
         return jwt.encode(payload, JWT_SECRET_KEY, JWT_ALGORITHM)
@@ -171,12 +172,16 @@ class UserService(ServiceMixin):
     def create_token_by_user(self, user: User) -> Token:
         user_uuid = str(user.dict().get("uuid"))
         refresh_token: str = self.create_token_str(
-            sub=user_uuid, token_type="refresh", exp=JWT_REFRESH_EXPIRE_SECONDS
-        )
-        access_token: str = self.create_token_str(
-            sub=user_uuid, token_type="access", exp=JWT_ACCESS_EXPIRE_SECONDS
+            sub={"user_uuid": user_uuid},
+            token_type="refresh",
+            exp=JWT_REFRESH_EXPIRE_SECONDS,
         )
         refresh_jti: str = self.get_token_jti(refresh_token)
+        access_token: str = self.create_token_str(
+            sub={"user_uuid": user_uuid, "refresh_jti": refresh_jti},
+            token_type="access",
+            exp=JWT_ACCESS_EXPIRE_SECONDS,
+        )
         self.active_refresh_token.lpush(user_uuid, refresh_jti)
         return Token(access_token=access_token, refresh_token=refresh_token)
 
@@ -195,8 +200,13 @@ class UserService(ServiceMixin):
     def logout(self, token: str) -> NoReturn:
         payload = self.decode_token(token)
         jti: str = payload.get("jti", None)
-        if not jti:
-            raise
+        refresh_jti: str = payload.get("refresh_jti", None)
+        user_uuid: str = payload.get("user_uuid", None)
+        if not jti or not refresh_jti or not user_uuid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect payload"
+            )
+        self.active_refresh_token.lrem(user_uuid, 0, jti)
         self.block_access_token(jti)
 
     def logout_all(self, token: str) -> NoReturn:
